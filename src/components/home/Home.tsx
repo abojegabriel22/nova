@@ -24,7 +24,7 @@ const getDeviceInfo = (): DeviceInfo => {
     if (gl) {
       const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
       if (debugInfo) {
-        gpuRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_REGISTRY_STRING) || gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        gpuRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || 'N/A';
       }
     }
   } catch (e) {
