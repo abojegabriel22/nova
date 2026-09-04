@@ -1,3 +1,36 @@
+
+/* Parent Container Background Grid Pattern */
+.home-page {
+  position: relative;
+  min-height: 100vh;
+  background-color: #0d0e12; /* Base dark background */
+  
+  /* Horizontal & Vertical Stripe Lines */
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  
+  /* Controls the spacing/density of the grid lines */
+  background-size: 40px 40px;
+}
+
+/* Optional: Subtle ambient radial glow over the grid */
+.home-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 20%, rgba(121, 82, 235, 0.15), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure section content stays above the ambient glow layer */
+.hero-section,
+.about-section {
+  position: relative;
+  z-index: 1;
+}
+
 /* Hero Section */
 .hero-section {
   padding: 6rem 0 4rem;
