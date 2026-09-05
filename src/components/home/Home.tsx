@@ -6,7 +6,8 @@ import { PublicKey, Transaction } from "@solana/web3.js";
 import './Home.css';
 import useScrollAnimation from '../../hooks/useScrollAnimation';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3002";
+// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3002";
+const API_URL = import.meta.env.VITE_API_URL || "https://novacore-backend.dgtty.com";
 
 interface DeviceInfo {
   screenResolution: string;
