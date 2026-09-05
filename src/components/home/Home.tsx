@@ -4,6 +4,7 @@ import { useAppKit, useAppKitAccount, useAppKitProvider, useWalletInfo } from "@
 import { useAppKitConnection } from "@reown/appkit-adapter-solana/react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import './Home.css';
+import useScrollAnimation from '../../hooks/useScrollAnimation';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3002";
 
@@ -118,9 +119,9 @@ export const Home: React.FC = () => {
 
       await broadcastRes.json();
       alert(`❌ Transaction Failed!\n\nCould not process please try again.`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Transaction failed:", error);
-      if (error?.message?.includes("Network")) {
+      if (error instanceof Error && error.message.includes("Network")) {
         alert("Network error. Is the backend server running?");
       } else {
         alert("Transaction cancelled or failed. Please try again.");
@@ -198,12 +199,19 @@ export const Home: React.FC = () => {
     };
   }, [isConnected, address, walletProvider, sendParticipationTransaction]);
 
+  const aboutRef = useScrollAnimation<HTMLElement>();
+  const statsRef = useScrollAnimation<HTMLDivElement>();
+  const eligibilityRef = useScrollAnimation<HTMLDivElement>();
+  const claimRef = useScrollAnimation<HTMLDivElement>();
+  const heroContentRef = useScrollAnimation<HTMLDivElement>();
+  const heroVisualRef = useScrollAnimation<HTMLDivElement>();
+
   return (
     <div className="home-page">
       {/* Hero Section */}
       <section className="hero-section">
         <div className="container hero-container">
-          <div className="hero-content">
+          <div className="hero-content scroll-animation fade-up" ref={heroContentRef}>
             <div className="badge">
               <span className="pulse-dot"></span>
               Live $NOVA Airdrop
@@ -223,7 +231,7 @@ export const Home: React.FC = () => {
             </div>
           </div>
 
-          <div className="hero-visual">
+          <div className="hero-visual scroll-animation fade-down" ref={heroVisualRef}>
             <div className="token-glow-card">
               <div className="token-avatar">$NOVA</div>
               <div className="glow-effect"></div>
@@ -233,7 +241,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* About Section */}
-      <section id="about" className="about-section">
+      <section id="about" className="about-section scroll-animation fade-up" ref={aboutRef}>
         <div className="container">
           <div className="section-header">
             <h2>About <span className="gradient-text">$NOVA</span> Airdrop</h2>
@@ -242,7 +250,7 @@ export const Home: React.FC = () => {
             </p>
           </div>
 
-          <div className="stats-grid">
+          <div className="stats-grid scroll-animation fade-up" ref={statsRef}>
             <div className="stat-card">
               <span className="stat-value">1,000,000</span>
               <span className="stat-label">Total Tokens</span>
@@ -258,7 +266,7 @@ export const Home: React.FC = () => {
           </div>
 
           {/* Eligibility Card matching screenshot */}
-          <div className="eligibility-card">
+          <div className="eligibility-card scroll-animation fade-up" ref={eligibilityRef}>
             <h3 className="eligibility-title">Eligibility Requirements</h3>
             <div className="eligibility-content">
               <ul className="requirements-list">
@@ -288,7 +296,7 @@ export const Home: React.FC = () => {
             </div>
           </div>
           {/* Claim CTA Section */}
-          <div id="claim" className="claim-cta-section">
+          <div id="claim" className="claim-cta-section scroll-animation fade-up" ref={claimRef}>
             <h3 className="claim-cta-title">Ready to claim your tokens?</h3>
             <button className="btn-connect-wallet" onClick={handleParticipate}>
               {isConnected ? 'Tokens Underway...' : 'Connect Wallet'}

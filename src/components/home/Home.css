@@ -1,4 +1,3 @@
-
 /* Parent Container Background Grid Pattern */
 .home-page {
   position: relative;
@@ -217,6 +216,7 @@
   height: auto;
   object-fit: contain;
 }
+
 /* Claim CTA Section */
 .claim-cta-section {
   text-align: center;
@@ -231,7 +231,6 @@
 }
 
 .btn-connect-wallet {
-  /* background: #a45339; */
   background: linear-gradient(135deg, #1e1b4b, #4c1d95);
   color: white;
   font-weight: 700;
@@ -246,4 +245,430 @@
 .btn-connect-wallet:hover {
   opacity: 0.9;
   transform: translateY(-2px);
+}
+
+
+/* ================================
+   TABLET
+================================ */
+
+@media (max-width: 900px) {
+  .hero-section {
+    padding: 4rem 20px 3rem;
+  }
+
+  .hero-container {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 3rem;
+  }
+
+  .hero-title {
+    font-size: 2.75rem;
+  }
+
+  .hero-description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .stats-grid {
+    gap: 1rem;
+  }
+
+  .eligibility-card {
+    padding: 2.5rem 2px;
+  }
+
+  .eligibility-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: center;
+  }
+
+  .requirements-list li {
+    justify-content: center;
+  }
+
+  .steps-section {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .steps-heading h2,
+  .steps-heading span {
+    font-size: 42px;
+  }
+
+  .step-card {
+    padding-left: 25px;
+    padding-right: 25px;
+  }
+
+  .step-card h3 {
+    font-size: 28px;
+  }
+
+  .step-card p {
+    font-size: 17px;
+  }
+}
+
+
+/* ================================
+   MOBILE
+================================ */
+
+@media (max-width: 500px) {
+  .home-header {
+    height: 105px;
+    padding-left: 13px;
+    padding-right: 17px;
+  }
+
+  .logo-wrapper {
+    width: 202px;
+    height: 72px;
+  }
+
+  .dgtty-logo {
+    width: 202px;
+  }
+
+  .top-participate {
+    min-width: 114px;
+    padding: 11px 15px;
+    font-size: 12px;
+  }
+
+  .hero-section {
+    padding: 3rem 18px 2.5rem;
+  }
+
+  .official-badge {
+    margin-bottom: 43px;
+  }
+
+  .hero-title,
+  .hero-section h1 {
+    font-size: 33px;
+    letter-spacing: -1.5px;
+  }
+
+  .hero-description {
+    font-size: 15px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-actions button,
+  .hero-actions a {
+    width: 100%;
+    text-align: center;
+  }
+
+  .token-glow-card {
+    width: 200px;
+    height: 200px;
+  }
+
+  .token-avatar {
+    width: 140px;
+    height: 140px;
+    font-size: 1.8rem;
+  }
+
+  .about-section {
+    padding: 3.5rem 25px;
+  }
+
+  .section-header h2 {
+    font-size: 1.75rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1.5rem;
+  }
+
+  .eligibility-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 16px;
+  }
+
+  .eligibility-title {
+    font-size: 1.35rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .requirements-list {
+    gap: 1rem;
+  }
+
+  .requirements-list li {
+    font-size: 0.95rem;
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .wallet-graphic img {
+    max-width: 150px;
+  }
+
+  .claim-cta-title {
+    font-size: 1.4rem;
+  }
+
+  .btn-connect-wallet {
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  /* --------- how to section -------- */
+  .steps-section {
+    padding: 65px 27px 70px;
+  }
+
+  /* Stack the heading */
+  .steps-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 73px;
+    padding: 0;
+  }
+
+  .steps-heading h2 {
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -1.8px;
+    text-align: center;
+  }
+
+  .steps-heading span {
+    margin-top: 25px;
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -1.8px;
+    text-align: center;
+  }
+
+  /* Stack cards */
+  .steps-grid {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+
+  /* Mobile card */
+  .step-card {
+    min-height: 293px;
+    padding: 25px 25px 30px;
+    border-radius: 28px;
+  }
+
+  /* Number */
+  .step-number {
+    width: 63px;
+    height: 63px;
+    margin-bottom: 50px;
+    font-size: 22px;
+  }
+
+  /* Title */
+  .step-card h3 {
+    font-size: 29px;
+    line-height: 1.2;
+    letter-spacing: -1px;
+  }
+
+  /* Description */
+  .step-card p {
+    max-width: 330px;
+    margin-top: 39px;
+    font-size: 19px;
+    line-height: 1.45;
+  }
+}
+
+
+/* ================================
+   SMALL PHONES
+================================ */
+
+@media (max-width: 370px) {
+  .home-header {
+    padding-left: 8px;
+    padding-right: 10px;
+  }
+
+  .logo-wrapper,
+  .dgtty-logo {
+    width: 175px;
+  }
+
+  .top-participate {
+    min-width: 100px;
+    font-size: 11px;
+  }
+
+  .hero-title,
+  .hero-section h1 {
+    font-size: 29px;
+  }
+
+  .hero-description {
+    font-size: 14px;
+  }
+
+  .stat-value {
+    font-size: 1.6rem;
+  }
+
+  .eligibility-card {
+    padding: 1.25rem 1rem;
+  }
+
+  /* ----- how to section -------- */
+  .steps-section {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .steps-heading h2,
+  .steps-heading span {
+    font-size: 34px;
+  }
+
+  .step-card {
+    min-height: 285px;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .step-card h3 {
+    font-size: 26px;
+  }
+
+  .step-card p {
+    font-size: 17px;
+  }
+}
+
+
+/* =========================================
+   SCROLL ANIMATIONS
+========================================= */
+
+.scroll-animation {
+  opacity: 0;
+  visibility: hidden;
+  will-change: opacity, transform;
+
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
+}
+
+
+/* Fade UP when scrolling */
+
+.fade-up {
+  transform: translateY(60px);
+}
+
+
+/* Fade DOWN when scrolling */
+
+.fade-down {
+  transform: translateY(-100px);
+}
+
+
+/* Element becomes visible */
+
+.scroll-animation.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+@media (max-width: 500px) {
+  .scroll-animation {
+    transition-duration: 0.65s;
+  }
+
+  .fade-up {
+    transform: translateY(36px);
+  }
+
+  .fade-down {
+    transform: translateY(-60px);
+  }
+}
+
+
+/* =========================================
+   HEADER + HERO INITIAL ANIMATION
+========================================= */
+
+.home-fade-down {
+  animation: homeFadeDown 0.8s ease-out forwards;
+}
+
+
+@keyframes homeFadeDown {
+
+  from {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+}
+
+
+/* Hero comes slightly after header */
+
+.hero-section.home-fade-down {
+  animation-delay: 0.15s;
+  opacity: 0;
+}
+
+
+/* =========================================
+   ACCESSIBILITY
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .scroll-animation {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: none;
+  }
+
+  .home-fade-down {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
 }

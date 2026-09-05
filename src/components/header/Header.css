@@ -123,3 +123,234 @@
 .btn-claim:hover {
   opacity: 0.9;
 }
+
+/* =========================================
+   HEADER RESPONSIVE MEDIA QUERIES
+========================================= */
+
+/* Tablets & Medium Screens (Under 900px) */
+@media (max-width: 900px) {
+  .header-content {
+    height: 64px;
+  }
+
+  .brand-name {
+    font-size: 1.15rem;
+  }
+
+  .logo-img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .price-badge {
+    padding: 0.1rem 0.2rem;
+    font-size: 0.7rem;
+  }
+
+  .social-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .btn-claim {
+    padding: 0.55rem 1.1rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile Devices (Under 640px) */
+/* Mobile Devices (Under 640px) - 2-Row Stacked Layout */
+@media (max-width: 640px) {
+  .header {
+    padding: 0.75rem 1rem;
+  }
+
+  .header-content {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    gap: 0.85rem;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .brand-logo {
+    gap: 0.5rem;
+  }
+
+  .logo-img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .brand-name {
+    display: block; /* Ensure text remains visible */
+    font-size: 1.05rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .price-badge {
+    display: flex;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+    margin-left: auto;
+  }
+
+  .price-badge .ticker {
+    font-size: 0.7rem;
+  }
+
+  .price-badge .price {
+    font-size: 0.8rem;
+  }
+
+  .social-links {
+    gap: 0.5rem;
+  }
+
+  .social-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .btn-claim {
+    background: #c86843; /* Matches your design accent color */
+    padding: 0.55rem 1.25rem;
+    font-size: 0.85rem;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+}
+
+/* Very Small Mobile Devices (Under 380px) */
+/* =========================================
+   SMALL MOBILE BREAKPOINTS (360px & 320px)
+========================================= */
+
+/* Mobile (Under 480px) */
+@media (max-width: 480px) {
+  .header {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .header-left,
+  .header-right {
+    gap: 0.35rem;
+  }
+
+  .brand-name {
+    font-size: 0.85rem;
+  }
+
+  .logo-img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .price-badge {
+    padding: 0.25rem 0.4rem;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .price-badge .ticker {
+    font-size: 0.65rem;
+  }
+
+  .price-badge .price {
+    font-size: 0.72rem;
+  }
+
+  .price-badge .change {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.25rem;
+  }
+
+  .social-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .social-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .btn-claim {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Extra Small Screens (340px - 320px) */
+@media (max-width: 340px) {
+  .header {
+    padding: 0.5rem 0.5rem;
+  }
+
+  /* Compact top row */
+  .brand-name {
+    font-size: 0.78rem;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .price-badge {
+    padding: 0.2rem 0.3rem;
+  }
+
+  /* Hide ticker string on ultra-small screens to preserve price & change */
+  .price-badge .ticker {
+    display: none;
+  }
+
+  .price-badge .price {
+    font-size: 0.7rem;
+  }
+
+  /* Compact bottom row */
+  .social-links {
+    gap: 0.25rem;
+  }
+
+  .social-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .btn-claim {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.7rem;
+  }
+}
+
+/* Micro / Foldable Folded Screens (Under 280px) */
+@media (max-width: 280px) {
+  .brand-name {
+    display: none; /* Keeps logo only on extreme edge cases */
+  }
+
+  .price-badge .change {
+    display: none; /* Shows price value only */
+  }
+}
