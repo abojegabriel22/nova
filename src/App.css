@@ -1,0 +1,198 @@
+.wallet-page {
+	align-items: center;
+	background:
+		radial-gradient(circle at 15% 20%, rgba(221, 255, 104, 0.12), transparent 28%),
+		linear-gradient(135deg, #101417 0%, #182126 52%, #27382c 100%);
+	display: flex;
+	justify-content: center;
+	min-height: 100vh;
+	overflow: hidden;
+	padding: 24px;
+	position: relative;
+}
+
+.wallet-page::before {
+	border: 1px solid rgba(244, 241, 232, 0.13);
+	content: '';
+	height: 420px;
+	position: absolute;
+	right: -160px;
+	top: -130px;
+	transform: rotate(28deg);
+	width: 420px;
+}
+
+.wallet-panel {
+	background: rgba(16, 20, 23, 0.78);
+	border: 1px solid rgba(244, 241, 232, 0.18);
+	max-width: 560px;
+	padding: clamp(32px, 7vw, 72px);
+	position: relative;
+	width: 100%;
+}
+
+.wallet-panel h1 {
+	color: #f4f1e8;
+}
+
+.eyebrow {
+	color: #ddff68;
+	font-family: 'DM Mono', monospace;
+	font-size: 0.75rem;
+	letter-spacing: 0.08em;
+	margin: 0 0 28px;
+	text-transform: uppercase;
+}
+
+h1 {
+	font-size: clamp(2.25rem, 7vw, 4.5rem);
+	letter-spacing: 0.01em;
+	line-height: 0.98;
+	margin: 0;
+	/* max-width: 8ch; */
+}
+
+.wallet-description {
+	color: rgba(244, 241, 232, 0.7);
+	font-size: 1.05rem;
+	line-height: 1.5;
+	margin: 28px 0 36px;
+	max-width: 28ch;
+}
+
+.connect-button {
+	background: #ddff68;
+	border: 0;
+	color: #101417;
+	cursor: pointer;
+	font-weight: 700;
+	min-height: 52px;
+	padding: 0 22px;
+	transition: background 160ms ease, transform 160ms ease;
+}
+
+.connect-button:hover {
+	background: #efffa9;
+	transform: translateY(-2px);
+}
+
+.connect-button:focus-visible {
+	outline: 3px solid #f4f1e8;
+	outline-offset: 4px;
+}
+
+.connect-button:disabled {
+	cursor: wait;
+	opacity: 0.6;
+}
+
+.recipient-label {
+	color: rgba(244, 241, 232, 0.58);
+	font-family: 'DM Mono', monospace;
+	font-size: 0.7rem;
+	line-height: 1.5;
+	margin: 0 0 18px;
+	overflow-wrap: anywhere;
+}
+
+.transfer-form {
+	border-top: 1px solid rgba(244, 241, 232, 0.16);
+	display: grid;
+	gap: 18px;
+	margin-top: 36px;
+	padding-top: 28px;
+}
+
+.transfer-tabs {
+	display: flex;
+	gap: 8px;
+}
+
+.transfer-tab {
+	background: transparent;
+	border: 1px solid rgba(244, 241, 232, 0.22);
+	color: rgba(244, 241, 232, 0.65);
+	cursor: pointer;
+	padding: 10px 14px;
+}
+
+.transfer-tab.active {
+	background: #ddff68;
+	border-color: #ddff68;
+	color: #101417;
+}
+
+.transfer-form label {
+	color: rgba(244, 241, 232, 0.72);
+	display: grid;
+	font-family: 'DM Mono', monospace;
+	font-size: 0.72rem;
+	gap: 8px;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+.transfer-form input {
+	background: rgba(244, 241, 232, 0.06);
+	border: 1px solid rgba(244, 241, 232, 0.22);
+	color: #f4f1e8;
+	font: 0.95rem 'DM Mono', monospace;
+	min-height: 46px;
+	padding: 0 12px;
+	width: 100%;
+}
+
+.transfer-form input:focus {
+	border-color: #ddff68;
+	outline: 2px solid rgba(221, 255, 104, 0.3);
+	outline-offset: 1px;
+}
+
+.send-button {
+	background: #f4f1e8;
+	border: 0;
+	color: #101417;
+	cursor: pointer;
+	font-weight: 700;
+	min-height: 48px;
+	padding: 0 18px;
+}
+
+.send-button:disabled {
+	cursor: wait;
+	opacity: 0.6;
+}
+
+.transfer-status {
+	color: #ddff68;
+	font-family: 'DM Mono', monospace;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.review-box {
+	border: 1px solid rgba(221, 255, 104, 0.45);
+	color: rgba(244, 241, 232, 0.78);
+	display: grid;
+	gap: 8px;
+	padding: 18px;
+}
+
+.review-box p {
+	font-family: 'DM Mono', monospace;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	margin: 0;
+}
+
+.review-box .review-title {
+	color: #ddff68;
+	font-weight: 500;
+	text-transform: uppercase;
+}
+
+.review-box .connect-button {
+	margin-top: 10px;
+}

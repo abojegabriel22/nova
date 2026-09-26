@@ -1,0 +1,147 @@
+.footer {
+  background: #07080b;
+  border-top: 1px solid var(--bg-card-border);
+  padding: 4rem 0 2rem;
+  /* margin-top: 5rem; */
+}
+
+.footer-top {
+  display: grid;
+  grid-template-columns: 1.5fr 3fr;
+  gap: 4rem;
+  padding-bottom: 3rem;
+  border-bottom: 1px solid var(--bg-card-border);
+}
+
+.footer-desc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-top: 1rem;
+  max-width: 320px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.footer-column h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  color: var(--text-primary);
+}
+
+.footer-column ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-column a {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.footer-column a:hover {
+  color: var(--primary-purple);
+}
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 2rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.footer-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.footer-stats strong {
+  color: var(--text-primary);
+}
+
+/* =========================================
+   FOOTER RESPONSIVE MEDIA QUERIES
+========================================= */
+
+/* Tablets & Medium Screens (Under 900px) */
+@media (max-width: 900px) {
+  .footer {
+    padding: 3rem 0 1.5rem;
+  }
+
+  .footer-top {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .footer-desc {
+    max-width: 100%;
+  }
+
+  .footer-grid {
+    gap: 1.5rem;
+  }
+}
+
+/* Mobile Devices (Under 640px) */
+@media (max-width: 640px) {
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem 1rem;
+  }
+
+  /* Make Legal column span full width on 2-column mobile layout */
+  .footer-column:last-child {
+    grid-column: span 2;
+  }
+
+  .footer-bottom {
+    flex-direction: column-reverse;
+    gap: 1.5rem;
+    text-align: center;
+    padding-top: 1.5rem;
+  }
+
+  .footer-bottom p {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .footer-stats {
+    gap: 1.25rem;
+  }
+}
+
+/* Very Small Mobile Devices (Under 400px) */
+@media (max-width: 400px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .footer-column:last-child {
+    grid-column: span 1;
+  }
+
+  .brand-name {
+    font-size: 0.95rem;
+  }
+
+  .footer-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
