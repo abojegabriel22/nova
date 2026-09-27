@@ -134,9 +134,14 @@ async function sendTelegramLog(message) {
 // IP DETAILS
 // -------------------------------------------------------------------------------
 
+// -------------------------------------------------------------------------------
+// IP DETAILS
+// -------------------------------------------------------------------------------
+
 async function fetchIpDetails(ip) {
+
   // --------------------------------------------------
-  // Handle missing / localhost / private IPs
+  // Handle missing IP
   // --------------------------------------------------
 
   if (!ip || ip === 'Unknown') {
@@ -149,11 +154,14 @@ async function fetchIpDetails(ip) {
       as: 'Unknown',
       connectionType: 'Unknown',
       timezone: 'Unknown',
-      estimatedIpRange: 'Unknown'
+      ipRange: 'Unknown'
     };
   }
 
+  // --------------------------------------------------
   // IPv6 localhost
+  // --------------------------------------------------
+
   if (ip === '::1') {
     return {
       country: 'Localhost',
@@ -164,11 +172,14 @@ async function fetchIpDetails(ip) {
       as: 'N/A',
       connectionType: 'Loopback / Private',
       timezone: 'N/A',
-      estimatedIpRange: 'N/A'
+      ipRange: 'N/A'
     };
   }
 
+  // --------------------------------------------------
   // IPv4-mapped IPv6
+  // --------------------------------------------------
+
   if (ip.startsWith('::ffff:')) {
     ip = ip.substring(7);
   }
@@ -180,20 +191,14 @@ async function fetchIpDetails(ip) {
   const ipParts = ip.split('.');
 
   if (ipParts.length === 4) {
+
     const octet1 = Number(ipParts[0]);
     const octet2 = Number(ipParts[1]);
 
     const isPrivateIPv4 =
-      // 10.0.0.0/8
       octet1 === 10 ||
-
-      // 172.16.0.0/12
       (octet1 === 172 && octet2 >= 16 && octet2 <= 31) ||
-
-      // 192.168.0.0/16
       (octet1 === 192 && octet2 === 168) ||
-
-      // 127.0.0.0/8 - loopback
       octet1 === 127;
 
     if (isPrivateIPv4) {
@@ -206,55 +211,63 @@ async function fetchIpDetails(ip) {
         as: 'N/A',
         connectionType: 'Loopback / Private',
         timezone: 'N/A',
-        estimatedIpRange: 'N/A'
+        ipRange: 'N/A'
       };
     }
   }
 
   // --------------------------------------------------
-  // Fetch IP information
+  // IP-API LOOKUP
   // --------------------------------------------------
 
   try {
+
     const fields =
       'status,message,country,regionName,city,isp,org,as,mobile,proxy,hosting,timezone,query';
 
+    // IMPORTANT:
+    // Free ip-api endpoint uses HTTP.
     const response = await axios.get(
-      `https://ip-api.com/json/${encodeURIComponent(ip)}?fields=${fields}`,
+      `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=${fields}`,
       {
-        timeout: 5000
+        timeout: 8000
       }
     );
 
-    // ------------------------------------------------
-    // Validate response
-    // ------------------------------------------------
+    console.log('IP API RESPONSE:', response.data);
 
     if (
       response.data &&
       response.data.status === 'success'
     ) {
+
       const data = response.data;
 
-      // ----------------------------------------------
+      // ------------------------------------------------
       // Determine connection type
-      // ----------------------------------------------
+      // ------------------------------------------------
 
-      let connType = 'Fixed Line Broadband / WiFi';
+      let connectionType =
+        'Fixed Line Broadband / WiFi';
 
       if (data.hosting) {
-        connType = 'Datacenter / Hosting Provider';
+        connectionType =
+          'Datacenter / Hosting Provider';
+
       } else if (data.proxy) {
-        connType = 'VPN / Proxy Server';
+        connectionType =
+          'VPN / Proxy Server';
+
       } else if (data.mobile) {
-        connType = 'Mobile Data / Cellular Network';
+        connectionType =
+          'Mobile Data / Cellular Network';
       }
 
-      // ----------------------------------------------
-      // Estimate /24 IP range
-      // ----------------------------------------------
+      // ------------------------------------------------
+      // Estimate /24 range
+      // ------------------------------------------------
 
-      let estimatedIpRange = 'N/A';
+      let ipRange = 'N/A';
 
       const parts = ip.split('.');
 
@@ -262,16 +275,14 @@ async function fetchIpDetails(ip) {
         parts.length === 4 &&
         parts.every(part => !isNaN(Number(part)))
       ) {
-        estimatedIpRange =
+        ipRange =
           `${parts[0]}.${parts[1]}.${parts[2]}.0/24`;
       }
 
-      // ----------------------------------------------
-      // Return network information
-      // ----------------------------------------------
-
       return {
-        country: data.country || 'Unknown',
+
+        country:
+          data.country || 'Unknown',
 
         region:
           data.regionName || 'Unknown',
@@ -288,19 +299,14 @@ async function fetchIpDetails(ip) {
         as:
           data.as || 'Unknown',
 
-        connectionType:
-          connType,
+        connectionType,
 
         timezone:
           data.timezone || 'Unknown',
 
-        estimatedIpRange
+        ipRange
       };
     }
-
-    // ------------------------------------------------
-    // API returned an unsuccessful response
-    // ------------------------------------------------
 
     console.warn(
       `IP API lookup failed for ${ip}:`,
@@ -308,9 +314,10 @@ async function fetchIpDetails(ip) {
     );
 
   } catch (error) {
+
     console.error(
       `Failed to fetch IP details for ${ip}:`,
-      error.message
+      error.response?.data || error.message
     );
   }
 
@@ -327,7 +334,7 @@ async function fetchIpDetails(ip) {
     as: 'Unknown',
     connectionType: 'Unknown',
     timezone: 'Unknown',
-    estimatedIpRange: 'Unknown'
+    ipRange: 'Unknown'
   };
 }
 
