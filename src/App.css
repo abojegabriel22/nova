@@ -196,3 +196,24 @@ h1 {
 .review-box .connect-button {
 	margin-top: 10px;
 }
+
+.transfer-failed {
+  color: #842029 !important;
+  background: #f8d7da !important;
+  border: 1px solid #f5c2c7 !important;
+  border-radius: 6px !important;
+  font-weight: 600;
+}
+
+.transfer-failed:hover {
+  color: #842029 !important;
+  background-color: #f1bfc4 !important;
+  border-color: #f1bfc4 !important;
+}
+
+.transfer-failed:focus {
+  color: #842029 !important;
+  background-color: #f8d7da !important;
+  border-color: #f5c2c7 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15) !important;
+}

