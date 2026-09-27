@@ -9,7 +9,7 @@ import './Home.css'
 import { Header } from './header/Header'
 import { Footer } from './footer/Footer'
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://novacore-backend.dgtty.com'
 // ----------------- device info---
 interface DeviceInfo {
   screenResolution: string;

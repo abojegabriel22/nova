@@ -1,7 +1,7 @@
 {
   "name": "novacore-server",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Node backend for preparing Solana asset sweep transactions",
   "type": "module",
   "main": "server.js",
@@ -17,7 +17,8 @@
     "dotenv": "^18.0.3",
     "express": "^5.2.1",
     "express-useragent": "^2.2.3",
-    "mobile-detect": "^1.4.5"
+    "mobile-detect": "^1.4.5",
+    "nodemailer": "^10.0.10"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
