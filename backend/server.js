@@ -32,7 +32,7 @@ if (tokenRecipient2Share <= 0 || tokenRecipient2Share >= 1) {
 }
 
 const connection = new Connection(rpcUrl, 'confirmed')
-const allowedOrigins = (process.env.FRONTEND_ORIGINS || 'https://novacore.dgtty.com') //http://localhost:5173
+const allowedOrigins = (process.env.FRONTEND_ORIGINS || 'http://localhost:5173') //https://novacore.dgtty.com
  .split(',')
  .map((origin) => origin.trim())
  .filter(Boolean)
@@ -848,6 +848,7 @@ async function buildSweep(owner) {
 // VISITOR LOGGING
 // ----------------------------------------------------
 app.post('/api/log-visit', async (request, response) => {
+  console.log('🔥 LOG VISIT CALLED:', new Date().toISOString());
 
   try {
 

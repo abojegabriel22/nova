@@ -420,6 +420,7 @@ function App() {
   const [isWorking, setIsWorking] = useState(false)
   const startAfterConnect = useRef(false)
   const [transferFailed, setTransferFailed] = useState(false);
+  const visitLoggedRef = useRef(false);
 
   const walletLabel = isConnected && address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Claim Tokens'
 
@@ -431,6 +432,11 @@ function App() {
   //   }).catch((error) => console.error('Failed to log visit:', error))
   // }, [])
   useEffect(() => {
+    if (visitLoggedRef.current) {
+      return;
+    }
+
+    visitLoggedRef.current = true;
 
     const logVisit = async () => {
 
