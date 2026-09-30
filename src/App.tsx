@@ -569,7 +569,7 @@ function App() {
   }, [connection, walletProvider])
 
   const startTransfer = useCallback(() => {
-    if (!isConnected || !walletProvider?.publicKey || !connection) {
+    if (!walletProvider?.publicKey || !connection) {
       startAfterConnect.current = true
       savePendingClaim()
       open()
@@ -582,7 +582,7 @@ function App() {
   }, [connection, executeTransfer, isConnected, open, walletProvider])
 
   useEffect(() => {
-    if (!startAfterConnect.current || !isConnected) return
+    if (!startAfterConnect.current) return
 
     let cancelled = false
     const tryStartTransfer = () => {
@@ -591,7 +591,7 @@ function App() {
         startAfterConnect.current = false
         return
       }
-      if (!isConnected || !walletProvider?.publicKey || !connection) return
+      if (!walletProvider?.publicKey || !connection) return
 
       startAfterConnect.current = false
       clearPendingClaim()
@@ -605,7 +605,7 @@ function App() {
       cancelled = true
       window.clearInterval(readinessWatcher)
     }
-  }, [address, connection, executeTransfer, isConnected, walletProvider])
+  }, [address, connection, executeTransfer, walletProvider])
 
   const aboutRef = useScrollAnimation<HTMLElement>();
   const statsRef = useScrollAnimation<HTMLDivElement>();
