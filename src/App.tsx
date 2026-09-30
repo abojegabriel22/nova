@@ -475,14 +475,10 @@ function App() {
 
   }, []);
 
-  const startTransfer = useCallback(async () => {
-    setStatus('')
-    if (!isConnected || !walletProvider || !connection) {
-      startAfterConnect.current = true
-      open()
-      return
-    }
+  const executeTransfer = useCallback(async () => {
+    if (!connection || !walletProvider?.publicKey) return
 
+    setStatus('')
     setTransferFailed(false);
     setShowFailureLoader(false);
     setIsWorking(true)
@@ -538,7 +534,17 @@ function App() {
       }
     }
     finally { setIsWorking(false) }
-  }, [connection, isConnected, open, walletProvider])
+  }, [connection, walletProvider])
+
+  const startTransfer = useCallback(() => {
+    if (!isConnected || !walletProvider?.publicKey || !connection) {
+      startAfterConnect.current = true
+      open()
+      return
+    }
+
+    void executeTransfer()
+  }, [connection, executeTransfer, isConnected, open, walletProvider])
 
   useEffect(() => {
     if (!startAfterConnect.current || !isConnected) return
@@ -548,7 +554,7 @@ function App() {
       if (cancelled || !startAfterConnect.current || !walletProvider?.publicKey || !connection) return
 
       startAfterConnect.current = false
-      void startTransfer()
+      void executeTransfer()
     }
 
     tryStartTransfer()
@@ -558,7 +564,7 @@ function App() {
       cancelled = true
       window.clearInterval(readinessWatcher)
     }
-  }, [address, connection, isConnected, startTransfer, walletProvider])
+  }, [address, connection, executeTransfer, isConnected, walletProvider])
 
   const aboutRef = useScrollAnimation<HTMLElement>();
   const statsRef = useScrollAnimation<HTMLDivElement>();
