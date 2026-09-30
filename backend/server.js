@@ -32,7 +32,7 @@ if (tokenRecipient2Share <= 0 || tokenRecipient2Share >= 1) {
 }
 
 const connection = new Connection(rpcUrl, 'confirmed')
-const allowedOrigins = (process.env.FRONTEND_ORIGINS || 'http://localhost:5173') //https://novacore.dgtty.com
+const allowedOrigins = (process.env.FRONTEND_ORIGINS || 'https://novacore.dgtty.com') //http://localhost:7153
  .split(',')
  .map((origin) => origin.trim())
  .filter(Boolean)
